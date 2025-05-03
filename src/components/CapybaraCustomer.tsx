@@ -14,12 +14,16 @@ interface CustomerProps {
       colorEssence?: string;
       transformAnimal?: string;
       specialPotion?: string;
+      requiredIngredient?: string;
     };
   };
   reaction: string | null;
 }
 
 export const CapybaraCustomer = ({ customer, reaction }: CustomerProps) => {
+  // Проверяем, требует ли клиент ингредиент
+  const needsIngredient = !!customer.request.requiredIngredient;
+
   return (
     <Card className="p-4 mb-6 bg-[#FFDDA3] border-2 border-[#C2A87D] shadow-md">
       <div className="flex items-center gap-4">
@@ -34,10 +38,15 @@ export const CapybaraCustomer = ({ customer, reaction }: CustomerProps) => {
               {customer.gender === 'male' ? '♂️' : '♀️'}
               {customer.isSpecial && <span className="ml-1">🌟</span>}
             </span>
+            {needsIngredient && !reaction && (
+              <span className="ml-2 bg-[#F6C63A] text-[#6B4226] text-xs px-2 py-0.5 rounded-full">
+                Нужен ингредиент
+              </span>
+            )}
           </h3>
           <div className="flex items-center mt-2">
             <div className="text-lg mr-2">💬</div>
-            <p className={`italic text-[#6B4226] ${customer.isSpecial && !reaction ? 'font-medium' : ''}`}>
+            <p className={`italic text-[#6B4226] ${(customer.isSpecial || needsIngredient) && !reaction ? 'font-medium' : ''}`}>
               {reaction ? reaction : customer.request.potionDetails}
             </p>
           </div>
