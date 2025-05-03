@@ -23,6 +23,7 @@ interface Customer {
     potionType: 'color' | 'transform' | 'other';
     potionDetails: string;
     colorEssence?: string;
+    transformAnimal?: string;
   };
 }
 
@@ -44,6 +45,17 @@ const colorEssences = [
   { color: 'crimson', name: 'Багровый', hex: '#DC143C' },
 ];
 
+const animalSpirits = [
+  { animal: 'frog', name: 'лягушка', emoji: '🐸' },
+  { animal: 'mouse', name: 'мышь', emoji: '🐭' },
+  { animal: 'bird', name: 'птица', emoji: '🐦' },
+  { animal: 'fish', name: 'рыба', emoji: '🐟' },
+  { animal: 'rabbit', name: 'кролик', emoji: '🐰' },
+  { animal: 'cat', name: 'кошка', emoji: '🐱' },
+  { animal: 'owl', name: 'сова', emoji: '🦉' },
+  { animal: 'turtle', name: 'черепаха', emoji: '🐢' },
+];
+
 const customerNames = [
   { name: 'Аркадий', gender: 'male' },
   { name: 'Матильда', gender: 'female' },
@@ -60,6 +72,8 @@ const CapybaraGame = () => {
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [selectedPotion, setSelectedPotion] = useState<Potion | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
+  const [customerReaction, setCustomerReaction] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
 
   // Генерация случайного покупателя
@@ -69,15 +83,16 @@ const CapybaraGame = () => {
     
     let potionDetails = '';
     let colorEssence;
+    let transformAnimal;
     
     if (randomPotionType === 'color') {
       const randomColor = colorEssences[Math.floor(Math.random() * colorEssences.length)];
       potionDetails = `Я хочу ${randomColor.name} цвет!`;
       colorEssence = randomColor.color;
     } else if (randomPotionType === 'transform') {
-      const transformations = ['лягушку', 'мышь', 'птицу', 'рыбу'];
-      const randomTransform = transformations[Math.floor(Math.random() * transformations.length)];
-      potionDetails = `Хочу превратиться в ${randomTransform}!`;
+      const randomAnimal = animalSpirits[Math.floor(Math.random() * animalSpirits.length)];
+      potionDetails = `Хочу превратиться в ${randomAnimal.name}!`;
+      transformAnimal = randomAnimal.animal;
     } else {
       const otherPotions = ['стать сильнее', 'вылечить простуду', 'стать невидимым', 'читать мысли'];
       const randomOther = otherPotions[Math.floor(Math.random() * otherPotions.length)];
@@ -93,6 +108,7 @@ const CapybaraGame = () => {
         potionType: randomPotionType,
         potionDetails,
         colorEssence,
+        transformAnimal
       }
     };
   };
@@ -102,6 +118,35 @@ const CapybaraGame = () => {
     setGameStarted(true);
     setCurrentCustomer(generateCustomer());
     setScore(0);
+    setCustomerReaction(null);
+  };
+
+  // Получение реакции на правильное зелье
+  const getHappyReaction = () => {
+    if (!currentCustomer) return "Спасибо!";
+    
+    // Реакция на зелье цвета
+    if (currentCustomer.request.potionType === 'color' && currentCustomer.request.colorEssence) {
+      const colorName = colorEssences.find(c => c.color === currentCustomer.request.colorEssence)?.name;
+      return `Ух ты! Я ${colorName}! Выглядит потрясающе! ${currentCustomer.gender === 'female' ? 'Сияю' : 'Сияю'} как звезда!`;
+    }
+    
+    // Реакция на зелье трансформации
+    if (currentCustomer.request.potionType === 'transform' && currentCustomer.request.transformAnimal) {
+      const animalName = animalSpirits.find(a => a.animal === currentCustomer.request.transformAnimal)?.name;
+      const animalEmoji = animalSpirits.find(a => a.animal === currentCustomer.request.transformAnimal)?.emoji;
+      return `Ух ты! Я ${animalName}! ${animalEmoji} Какое чудо! Спасибо, Виолетта!`;
+    }
+    
+    // Реакция на другие зелья
+    const otherReactions = [
+      "Именно то, что мне нужно! Спасибо!",
+      "Превосходно! У тебя золотые руки!",
+      "Боже, как хорошо! Обязательно вернусь к тебе ещё!",
+      "Вот это да! Сразу чувствую эффект!"
+    ];
+    
+    return otherReactions[Math.floor(Math.random() * otherReactions.length)];
   };
 
   // Проверка правильности выбранного зелья
@@ -116,27 +161,42 @@ const CapybaraGame = () => {
       isCorrect = false;
     }
     
+    // Дополнительная проверка для зелий трансформации
+    if (isCorrect && currentCustomer.request.potionType === 'transform' && 
+        selectedAnimal !== currentCustomer.request.transformAnimal) {
+      isCorrect = false;
+    }
+    
     if (isCorrect) {
+      const reaction = getHappyReaction();
+      setCustomerReaction(reaction);
+      
       toast({
         title: "Правильно!",
         description: "Клиент доволен вашим зельем!",
       });
+      
       setScore(prev => prev + 10);
     } else {
+      setCustomerReaction("Это не то, что я просил... 😔");
+      
       toast({
         title: "Ой!",
         description: "Это не то зелье, которое нужно клиенту!",
         variant: "destructive"
       });
+      
       setScore(prev => Math.max(0, prev - 5));
     }
     
-    // Новый клиент
+    // Новый клиент через некоторое время
     setTimeout(() => {
       setCurrentCustomer(generateCustomer());
       setSelectedPotion(null);
       setSelectedColor(null);
-    }, 1500);
+      setSelectedAnimal(null);
+      setCustomerReaction(null);
+    }, 3000);
   };
 
   return (
@@ -168,22 +228,29 @@ const CapybaraGame = () => {
           </div>
           
           {currentCustomer && (
-            <CapybaraCustomer customer={currentCustomer} />
+            <CapybaraCustomer customer={currentCustomer} reaction={customerReaction} />
           )}
           
           <PotionShop 
             potions={potions} 
             colorEssences={colorEssences}
+            animalSpirits={animalSpirits}
             selectedPotion={selectedPotion}
             setSelectedPotion={setSelectedPotion}
             selectedColor={selectedColor}
             setSelectedColor={setSelectedColor}
+            selectedAnimal={selectedAnimal}
+            setSelectedAnimal={setSelectedAnimal}
           />
           
           <div className="mt-4 flex justify-center">
             <Button 
               onClick={checkPotion} 
-              disabled={!selectedPotion || (selectedPotion.type === 'color' && !selectedColor)}
+              disabled={
+                !selectedPotion || 
+                (selectedPotion.type === 'color' && !selectedColor) ||
+                (selectedPotion.type === 'transform' && !selectedAnimal)
+              }
               className="bg-[#A66D4F] hover:bg-[#8A5A3C] text-white px-6 py-3"
             >
               Подать зелье

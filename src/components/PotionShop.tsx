@@ -17,22 +17,34 @@ interface ColorEssence {
   hex: string;
 }
 
+interface AnimalSpirit {
+  animal: string;
+  name: string;
+  emoji: string;
+}
+
 interface PotionShopProps {
   potions: Potion[];
   colorEssences: ColorEssence[];
+  animalSpirits: AnimalSpirit[];
   selectedPotion: Potion | null;
   setSelectedPotion: (potion: Potion | null) => void;
   selectedColor: string | null;
   setSelectedColor: (color: string | null) => void;
+  selectedAnimal: string | null;
+  setSelectedAnimal: (animal: string | null) => void;
 }
 
 export const PotionShop = ({
   potions,
   colorEssences,
+  animalSpirits,
   selectedPotion,
   setSelectedPotion,
   selectedColor,
-  setSelectedColor
+  setSelectedColor,
+  selectedAnimal,
+  setSelectedAnimal
 }: PotionShopProps) => {
   const [activeTab, setActiveTab] = useState('potions');
 
@@ -40,11 +52,17 @@ export const PotionShop = ({
     setSelectedPotion(potion);
     if (potion.type === 'color') {
       setActiveTab('colors');
+    } else if (potion.type === 'transform') {
+      setActiveTab('animals');
     }
   };
 
   const handleColorSelect = (color: string) => {
     setSelectedColor(color);
+  };
+
+  const handleAnimalSelect = (animal: string) => {
+    setSelectedAnimal(animal);
   };
 
   return (
@@ -62,6 +80,13 @@ export const PotionShop = ({
             className="data-[state=active]:bg-[#A66D4F] data-[state=active]:text-white"
           >
             Эссенции цвета
+          </TabsTrigger>
+          <TabsTrigger 
+            value="animals" 
+            disabled={!selectedPotion || selectedPotion.type !== 'transform'}
+            className="data-[state=active]:bg-[#A66D4F] data-[state=active]:text-white"
+          >
+            Духи зверей
           </TabsTrigger>
         </TabsList>
         
@@ -112,6 +137,29 @@ export const PotionShop = ({
             </div>
           </ScrollArea>
         </TabsContent>
+        
+        <TabsContent value="animals">
+          <ScrollArea className="h-48 p-2">
+            <div className="grid grid-cols-2 gap-3">
+              {animalSpirits.map(animal => (
+                <div 
+                  key={animal.animal}
+                  onClick={() => handleAnimalSelect(animal.animal)}
+                  className={`
+                    p-3 rounded-lg cursor-pointer transition-all flex items-center gap-2
+                    ${selectedAnimal === animal.animal 
+                      ? 'bg-[#A66D4F] text-white' 
+                      : 'bg-[#F5E7C9] hover:bg-[#E6D5B8]'
+                    }
+                  `}
+                >
+                  <div className="text-2xl">{animal.emoji}</div>
+                  <div>Дух {animal.name}</div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </TabsContent>
       </Tabs>
       
       <div className="mt-4 p-3 bg-[#F5E7C9] rounded-lg">
@@ -120,6 +168,7 @@ export const PotionShop = ({
           <div className="flex items-center gap-2">
             <div className="text-2xl">{selectedPotion.icon}</div>
             <div>{selectedPotion.name}</div>
+            
             {selectedPotion.type === 'color' && selectedColor && (
               <div 
                 className="w-6 h-6 rounded-full ml-2" 
@@ -127,6 +176,12 @@ export const PotionShop = ({
                   backgroundColor: colorEssences.find(e => e.color === selectedColor)?.hex || '#000' 
                 }}
               ></div>
+            )}
+            
+            {selectedPotion.type === 'transform' && selectedAnimal && (
+              <div className="ml-2">
+                {animalSpirits.find(a => a.animal === selectedAnimal)?.emoji}
+              </div>
             )}
           </div>
         ) : (
