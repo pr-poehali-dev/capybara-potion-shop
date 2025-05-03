@@ -1,13 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface Potion {
   id: number;
   name: string;
-  type: 'color' | 'transform' | 'other';
+  type: 'color' | 'transform' | 'other' | 'special';
   icon: string;
 }
 
@@ -23,30 +24,52 @@ interface AnimalSpirit {
   emoji: string;
 }
 
+interface SpecialPotion {
+  id: string;
+  name: string;
+  icon: string;
+  requiredName: string;
+}
+
 interface PotionShopProps {
   potions: Potion[];
   colorEssences: ColorEssence[];
   animalSpirits: AnimalSpirit[];
+  specialPotions: SpecialPotion[];
   selectedPotion: Potion | null;
   setSelectedPotion: (potion: Potion | null) => void;
   selectedColor: string | null;
   setSelectedColor: (color: string | null) => void;
   selectedAnimal: string | null;
   setSelectedAnimal: (animal: string | null) => void;
+  selectedSpecialPotion: string | null;
+  setSelectedSpecialPotion: (potion: string | null) => void;
+  currentCustomerName: string;
 }
 
 export const PotionShop = ({
   potions,
   colorEssences,
   animalSpirits,
+  specialPotions,
   selectedPotion,
   setSelectedPotion,
   selectedColor,
   setSelectedColor,
   selectedAnimal,
-  setSelectedAnimal
+  setSelectedAnimal,
+  selectedSpecialPotion,
+  setSelectedSpecialPotion,
+  currentCustomerName
 }: PotionShopProps) => {
   const [activeTab, setActiveTab] = useState('potions');
+  const [availableSpecialPotions, setAvailableSpecialPotions] = useState<SpecialPotion[]>([]);
+
+  useEffect(() => {
+    // Фильтрация специальных зелий, доступных для текущего клиента
+    const potionsForCustomer = specialPotions.filter(p => p.requiredName === currentCustomerName);
+    setAvailableSpecialPotions(potionsForCustomer);
+  }, [currentCustomerName, specialPotions]);
 
   const handlePotionSelect = (potion: Potion) => {
     setSelectedPotion(potion);
@@ -54,6 +77,8 @@ export const PotionShop = ({
       setActiveTab('colors');
     } else if (potion.type === 'transform') {
       setActiveTab('animals');
+    } else if (potion.type === 'special') {
+      setActiveTab('special');
     }
   };
 
@@ -63,6 +88,10 @@ export const PotionShop = ({
 
   const handleAnimalSelect = (animal: string) => {
     setSelectedAnimal(animal);
+  };
+
+  const handleSpecialPotionSelect = (potionId: string) => {
+    setSelectedSpecialPotion(potionId);
   };
 
   return (
@@ -88,6 +117,13 @@ export const PotionShop = ({
           >
             Духи зверей
           </TabsTrigger>
+          <TabsTrigger 
+            value="special" 
+            disabled={!selectedPotion || selectedPotion.type !== 'special' || availableSpecialPotions.length === 0}
+            className="data-[state=active]:bg-[#A66D4F] data-[state=active]:text-white"
+          >
+            Особые зелья
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="potions">
@@ -98,15 +134,27 @@ export const PotionShop = ({
                   key={potion.id}
                   onClick={() => handlePotionSelect(potion)}
                   className={`
-                    p-3 rounded-lg cursor-pointer transition-all flex items-center gap-2
+                    p-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 relative
                     ${selectedPotion?.id === potion.id 
                       ? 'bg-[#A66D4F] text-white' 
-                      : 'bg-[#F5E7C9] hover:bg-[#E6D5B8]'
+                      : potion.type === 'special' 
+                        ? 'bg-gradient-to-r from-[#F5E7C9] to-[#FFECB3] hover:bg-[#E6D5B8]' 
+                        : 'bg-[#F5E7C9] hover:bg-[#E6D5B8]'
                     }
+                    ${potion.type === 'special' && availableSpecialPotions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
+                  title={potion.type === 'special' && availableSpecialPotions.length === 0 
+                    ? 'Нет доступных особых зелий для текущего клиента' 
+                    : ''}
                 >
                   <div className="text-2xl">{potion.icon}</div>
                   <div className="text-sm">{potion.name}</div>
+                  
+                  {potion.type === 'special' && availableSpecialPotions.length > 0 && (
+                    <Badge className="absolute top-1 right-1 bg-[#F6C63A] text-[#6B4226]">
+                      Доступно
+                    </Badge>
+                  )}
                 </div>
               ))}
             </div>
@@ -188,6 +236,39 @@ export const PotionShop = ({
             </div>
           </ScrollArea>
         </TabsContent>
+        
+        <TabsContent value="special">
+          <ScrollArea className="h-48 p-2">
+            <div className="grid grid-cols-1 gap-3">
+              {availableSpecialPotions.length > 0 ? (
+                availableSpecialPotions.map(potion => (
+                  <div 
+                    key={potion.id}
+                    onClick={() => handleSpecialPotionSelect(potion.id)}
+                    className={`
+                      p-4 rounded-lg cursor-pointer transition-all flex items-center gap-3 
+                      ${selectedSpecialPotion === potion.id 
+                        ? 'bg-gradient-to-r from-[#F6C63A] to-[#D4A017] text-white' 
+                        : 'bg-gradient-to-r from-[#FFF9E6] to-[#FFECB3]'
+                      }
+                      hover:shadow-md
+                    `}
+                  >
+                    <div className="text-3xl">{potion.icon}</div>
+                    <div>
+                      <div className="font-semibold text-[#6B4226]">{potion.name}</div>
+                      <div className="text-xs text-[#8A6E52]">Специально для {potion.requiredName}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-[#8A6E52] italic">
+                  Нет доступных особых зелий для текущего клиента
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
       </Tabs>
       
       <div className="mt-4 p-3 bg-[#F5E7C9] rounded-lg">
@@ -225,6 +306,18 @@ export const PotionShop = ({
                 </span>
                 <span className="ml-1">
                   {animalSpirits.find(a => a.animal === selectedAnimal)?.emoji}
+                </span>
+              </div>
+            )}
+            
+            {selectedPotion.type === 'special' && selectedSpecialPotion && (
+              <div className="inline-flex items-center ml-2">
+                + 
+                <span className="ml-1">
+                  "{specialPotions.find(p => p.id === selectedSpecialPotion)?.name}"
+                </span>
+                <span className="ml-1">
+                  {specialPotions.find(p => p.id === selectedSpecialPotion)?.icon}
                 </span>
               </div>
             )}

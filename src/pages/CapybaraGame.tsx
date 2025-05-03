@@ -18,12 +18,14 @@ interface Customer {
   id: number;
   name: string;
   gender: 'male' | 'female';
+  isSpecial: boolean;
   avatar: string;
   request: {
-    potionType: 'color' | 'transform' | 'other';
+    potionType: 'color' | 'transform' | 'other' | 'special';
     potionDetails: string;
     colorEssence?: string;
     transformAnimal?: string;
+    specialPotion?: string;
   };
 }
 
@@ -32,6 +34,7 @@ const potions: Potion[] = [
   { id: 2, name: 'Зелье превращения', type: 'transform', icon: '⚗️' },
   { id: 3, name: 'Лечебное зелье', type: 'other', icon: '💊' },
   { id: 4, name: 'Зелье силы', type: 'other', icon: '💪' },
+  { id: 5, name: 'Особое зелье', type: 'special', icon: '✨' },
 ];
 
 const colorEssences = [
@@ -62,6 +65,14 @@ const animalSpirits = [
   { animal: 'ice', name: 'элементаль льда', emoji: '❄️' },
 ];
 
+const specialPotions = [
+  { id: 'golden', name: 'Золотое сияние', icon: '🌟', requiredName: 'Филимон' },
+  { id: 'rainbow', name: 'Радужное мерцание', icon: '🌈', requiredName: 'Матильда' },
+  { id: 'moonlight', name: 'Лунное свечение', icon: '🌙', requiredName: 'Клавдия' },
+  { id: 'cosmic', name: 'Космическая энергия', icon: '🌌', requiredName: 'Никодим' },
+  { id: 'starlight', name: 'Звёздный свет', icon: '⭐', requiredName: 'Аркадий' },
+];
+
 const customerNames = [
   { name: 'Аркадий', gender: 'male' },
   { name: 'Матильда', gender: 'female' },
@@ -79,42 +90,69 @@ const CapybaraGame = () => {
   const [selectedPotion, setSelectedPotion] = useState<Potion | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
+  const [selectedSpecialPotion, setSelectedSpecialPotion] = useState<string | null>(null);
   const [customerReaction, setCustomerReaction] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
+
+  // Проверка, является ли имя особенным
+  const isSpecialName = (name: string) => {
+    return specialPotions.some(potion => potion.requiredName === name);
+  };
+
+  // Получение специального зелья для имени
+  const getSpecialPotionForName = (name: string) => {
+    return specialPotions.find(potion => potion.requiredName === name);
+  };
 
   // Генерация случайного покупателя
   const generateCustomer = () => {
     const randomName = customerNames[Math.floor(Math.random() * customerNames.length)];
-    const randomPotionType = ['color', 'transform', 'other'][Math.floor(Math.random() * 3)] as 'color' | 'transform' | 'other';
+    const isSpecial = isSpecialName(randomName.name);
     
+    let potionType: 'color' | 'transform' | 'other' | 'special';
     let potionDetails = '';
     let colorEssence;
     let transformAnimal;
+    let specialPotion;
     
-    if (randomPotionType === 'color') {
-      const randomColor = colorEssences[Math.floor(Math.random() * colorEssences.length)];
-      potionDetails = `Я хочу ${randomColor.name} цвет!`;
-      colorEssence = randomColor.color;
-    } else if (randomPotionType === 'transform') {
-      const randomAnimal = animalSpirits[Math.floor(Math.random() * animalSpirits.length)];
-      potionDetails = `Хочу превратиться в ${randomAnimal.name}!`;
-      transformAnimal = randomAnimal.animal;
+    // У особенных покупателей есть 50% шанс запросить особое зелье
+    if (isSpecial && Math.random() > 0.5) {
+      potionType = 'special';
+      const specialPotionInfo = getSpecialPotionForName(randomName.name);
+      if (specialPotionInfo) {
+        potionDetails = `Мне нужно особое зелье "${specialPotionInfo.name}"! Только оно поможет мне!`;
+        specialPotion = specialPotionInfo.id;
+      }
     } else {
-      const otherPotions = ['стать сильнее', 'вылечить простуду', 'стать невидимым', 'читать мысли'];
-      const randomOther = otherPotions[Math.floor(Math.random() * otherPotions.length)];
-      potionDetails = `Мне нужно ${randomOther}!`;
+      potionType = ['color', 'transform', 'other'][Math.floor(Math.random() * 3)] as 'color' | 'transform' | 'other';
+      
+      if (potionType === 'color') {
+        const randomColor = colorEssences[Math.floor(Math.random() * colorEssences.length)];
+        potionDetails = `Я хочу ${randomColor.name} цвет!`;
+        colorEssence = randomColor.color;
+      } else if (potionType === 'transform') {
+        const randomAnimal = animalSpirits[Math.floor(Math.random() * animalSpirits.length)];
+        potionDetails = `Хочу превратиться в ${randomAnimal.name}!`;
+        transformAnimal = randomAnimal.animal;
+      } else {
+        const otherPotions = ['стать сильнее', 'вылечить простуду', 'стать невидимым', 'читать мысли'];
+        const randomOther = otherPotions[Math.floor(Math.random() * otherPotions.length)];
+        potionDetails = `Мне нужно ${randomOther}!`;
+      }
     }
 
     return {
       id: Date.now(),
       name: randomName.name,
       gender: randomName.gender,
+      isSpecial,
       avatar: `🦫`,
       request: {
-        potionType: randomPotionType,
+        potionType,
         potionDetails,
         colorEssence,
-        transformAnimal
+        transformAnimal,
+        specialPotion
       }
     };
   };
@@ -130,6 +168,12 @@ const CapybaraGame = () => {
   // Получение реакции на правильное зелье
   const getHappyReaction = () => {
     if (!currentCustomer) return "Спасибо!";
+    
+    // Реакция на особое зелье
+    if (currentCustomer.request.potionType === 'special' && currentCustomer.request.specialPotion) {
+      const potionInfo = specialPotions.find(p => p.id === currentCustomer.request.specialPotion);
+      return `Невероятно! ${potionInfo?.icon} "${potionInfo?.name}" - это именно то, что мне нужно! Ты настоящий мастер зельеварения, Виолетта! Ты спасла меня!`;
+    }
     
     // Реакция на зелье цвета
     if (currentCustomer.request.potionType === 'color' && currentCustomer.request.colorEssence) {
@@ -192,16 +236,27 @@ const CapybaraGame = () => {
       isCorrect = false;
     }
     
+    // Дополнительная проверка для особых зелий
+    if (isCorrect && currentCustomer.request.potionType === 'special' && 
+        selectedSpecialPotion !== currentCustomer.request.specialPotion) {
+      isCorrect = false;
+    }
+    
     if (isCorrect) {
       const reaction = getHappyReaction();
       setCustomerReaction(reaction);
       
+      // Особые зелья дают больше очков
+      const pointsToAdd = currentCustomer.request.potionType === 'special' ? 25 : 10;
+      
       toast({
         title: "Правильно!",
-        description: "Клиент доволен вашим зельем!",
+        description: currentCustomer.request.potionType === 'special' 
+          ? "Клиент в восторге от вашего особого зелья!"
+          : "Клиент доволен вашим зельем!",
       });
       
-      setScore(prev => prev + 10);
+      setScore(prev => prev + pointsToAdd);
     } else {
       setCustomerReaction("Это не то, что я просил... 😔");
       
@@ -220,6 +275,7 @@ const CapybaraGame = () => {
       setSelectedPotion(null);
       setSelectedColor(null);
       setSelectedAnimal(null);
+      setSelectedSpecialPotion(null);
       setCustomerReaction(null);
     }, 3000);
   };
@@ -260,12 +316,16 @@ const CapybaraGame = () => {
             potions={potions} 
             colorEssences={colorEssences}
             animalSpirits={animalSpirits}
+            specialPotions={specialPotions}
             selectedPotion={selectedPotion}
             setSelectedPotion={setSelectedPotion}
             selectedColor={selectedColor}
             setSelectedColor={setSelectedColor}
             selectedAnimal={selectedAnimal}
             setSelectedAnimal={setSelectedAnimal}
+            selectedSpecialPotion={selectedSpecialPotion}
+            setSelectedSpecialPotion={setSelectedSpecialPotion}
+            currentCustomerName={currentCustomer?.name || ''}
           />
           
           <div className="mt-4 flex justify-center">
@@ -274,7 +334,8 @@ const CapybaraGame = () => {
               disabled={
                 !selectedPotion || 
                 (selectedPotion.type === 'color' && !selectedColor) ||
-                (selectedPotion.type === 'transform' && !selectedAnimal)
+                (selectedPotion.type === 'transform' && !selectedAnimal) ||
+                (selectedPotion.type === 'special' && !selectedSpecialPotion)
               }
               className="bg-[#A66D4F] hover:bg-[#8A5A3C] text-white px-6 py-3"
             >
