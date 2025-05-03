@@ -121,17 +121,21 @@ export const PotionShop = ({
                   key={essence.color}
                   onClick={() => handleColorSelect(essence.color)}
                   className={`
-                    p-3 rounded-lg cursor-pointer transition-all 
+                    p-3 rounded-lg cursor-pointer transition-all relative
                     ${selectedColor === essence.color 
                       ? 'ring-4 ring-[#A66D4F] ring-opacity-75' 
                       : 'hover:ring-2 hover:ring-[#C2A87D]'
                     }
+                    ${essence.color === 'transparent' ? 'bg-[#F5E7C9] bg-opacity-30 backdrop-blur' : ''}
                   `}
-                  style={{ backgroundColor: essence.hex }}
+                  style={essence.color !== 'transparent' ? { backgroundColor: essence.hex } : {}}
                 >
-                  <div className="text-center font-semibold text-white text-shadow">
+                  <div className={`text-center font-semibold ${essence.color === 'transparent' ? 'text-[#6B4226]' : 'text-white text-shadow'}`}>
                     {essence.name}
                   </div>
+                  {essence.color === 'transparent' && (
+                    <div className="absolute inset-0 rounded-lg border-2 border-dashed border-[#6B4226] border-opacity-50"></div>
+                  )}
                 </div>
               ))}
             </div>
@@ -141,7 +145,8 @@ export const PotionShop = ({
         <TabsContent value="animals">
           <ScrollArea className="h-48 p-2">
             <div className="grid grid-cols-2 gap-3">
-              {animalSpirits.map(animal => (
+              <div className="col-span-2 mb-2 text-sm font-medium text-[#8A6E52]">Животные:</div>
+              {animalSpirits.filter(a => !['fire', 'water', 'earth', 'air', 'ice'].includes(a.animal)).map(animal => (
                 <div 
                   key={animal.animal}
                   onClick={() => handleAnimalSelect(animal.animal)}
@@ -149,6 +154,29 @@ export const PotionShop = ({
                     p-3 rounded-lg cursor-pointer transition-all flex items-center gap-2
                     ${selectedAnimal === animal.animal 
                       ? 'bg-[#A66D4F] text-white' 
+                      : 'bg-[#F5E7C9] hover:bg-[#E6D5B8]'
+                    }
+                  `}
+                >
+                  <div className="text-2xl">{animal.emoji}</div>
+                  <div>Дух {animal.name}</div>
+                </div>
+              ))}
+              
+              <div className="col-span-2 mt-3 mb-2 text-sm font-medium text-[#8A6E52]">Элементали:</div>
+              {animalSpirits.filter(a => ['fire', 'water', 'earth', 'air', 'ice'].includes(a.animal)).map(animal => (
+                <div 
+                  key={animal.animal}
+                  onClick={() => handleAnimalSelect(animal.animal)}
+                  className={`
+                    p-3 rounded-lg cursor-pointer transition-all flex items-center gap-2
+                    ${selectedAnimal === animal.animal 
+                      ? 'bg-[#A66D4F] text-white' 
+                      : animal.animal === 'fire' ? 'bg-gradient-to-r from-amber-500 to-red-600 text-white'
+                      : animal.animal === 'water' ? 'bg-gradient-to-r from-blue-300 to-blue-500 text-white'
+                      : animal.animal === 'earth' ? 'bg-gradient-to-r from-green-700 to-yellow-700 text-white'
+                      : animal.animal === 'air' ? 'bg-gradient-to-r from-blue-100 to-gray-200'
+                      : animal.animal === 'ice' ? 'bg-gradient-to-r from-blue-100 to-cyan-300'
                       : 'bg-[#F5E7C9] hover:bg-[#E6D5B8]'
                     }
                   `}
@@ -170,17 +198,34 @@ export const PotionShop = ({
             <div>{selectedPotion.name}</div>
             
             {selectedPotion.type === 'color' && selectedColor && (
-              <div 
-                className="w-6 h-6 rounded-full ml-2" 
-                style={{ 
-                  backgroundColor: colorEssences.find(e => e.color === selectedColor)?.hex || '#000' 
-                }}
-              ></div>
+              <div>
+                + 
+                {selectedColor === 'transparent' ? (
+                  <span className="inline-flex items-center ml-2">
+                    <span className="border border-dashed border-[#6B4226] w-6 h-6 rounded-full ml-2"></span>
+                    <span className="ml-1">Прозрачный</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center ml-2">
+                    <div 
+                      className="w-6 h-6 rounded-full" 
+                      style={{ backgroundColor: colorEssences.find(e => e.color === selectedColor)?.hex || '#000' }}
+                    ></div>
+                    <span className="ml-1">{colorEssences.find(e => e.color === selectedColor)?.name}</span>
+                  </span>
+                )}
+              </div>
             )}
             
             {selectedPotion.type === 'transform' && selectedAnimal && (
-              <div className="ml-2">
-                {animalSpirits.find(a => a.animal === selectedAnimal)?.emoji}
+              <div className="inline-flex items-center ml-2">
+                + 
+                <span className="ml-1">
+                  Дух {animalSpirits.find(a => a.animal === selectedAnimal)?.name}
+                </span>
+                <span className="ml-1">
+                  {animalSpirits.find(a => a.animal === selectedAnimal)?.emoji}
+                </span>
               </div>
             )}
           </div>

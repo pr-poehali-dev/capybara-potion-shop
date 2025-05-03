@@ -43,6 +43,7 @@ const colorEssences = [
   { color: 'yellow', name: 'Жёлтый', hex: '#FFFF55' },
   { color: 'orange', name: 'Оранжевый', hex: '#FFAA55' },
   { color: 'crimson', name: 'Багровый', hex: '#DC143C' },
+  { color: 'transparent', name: 'Прозрачный', hex: 'rgba(255, 255, 255, 0.3)' },
 ];
 
 const animalSpirits = [
@@ -54,6 +55,11 @@ const animalSpirits = [
   { animal: 'cat', name: 'кошка', emoji: '🐱' },
   { animal: 'owl', name: 'сова', emoji: '🦉' },
   { animal: 'turtle', name: 'черепаха', emoji: '🐢' },
+  { animal: 'fire', name: 'элементаль огня', emoji: '🔥' },
+  { animal: 'water', name: 'элементаль воды', emoji: '💧' },
+  { animal: 'earth', name: 'элементаль земли', emoji: '🪨' },
+  { animal: 'air', name: 'элементаль воздуха', emoji: '💨' },
+  { animal: 'ice', name: 'элементаль льда', emoji: '❄️' },
 ];
 
 const customerNames = [
@@ -128,6 +134,11 @@ const CapybaraGame = () => {
     // Реакция на зелье цвета
     if (currentCustomer.request.potionType === 'color' && currentCustomer.request.colorEssence) {
       const colorName = colorEssences.find(c => c.color === currentCustomer.request.colorEssence)?.name;
+      
+      if (currentCustomer.request.colorEssence === 'transparent') {
+        return `Ух ты! Я ${colorName}! Теперь меня почти не видно! Какое волшебство!`;
+      }
+      
       return `Ух ты! Я ${colorName}! Выглядит потрясающе! ${currentCustomer.gender === 'female' ? 'Сияю' : 'Сияю'} как звезда!`;
     }
     
@@ -135,6 +146,20 @@ const CapybaraGame = () => {
     if (currentCustomer.request.potionType === 'transform' && currentCustomer.request.transformAnimal) {
       const animalName = animalSpirits.find(a => a.animal === currentCustomer.request.transformAnimal)?.name;
       const animalEmoji = animalSpirits.find(a => a.animal === currentCustomer.request.transformAnimal)?.emoji;
+      
+      // Специальные реакции для элементалей
+      if (['fire', 'water', 'earth', 'air', 'ice'].includes(currentCustomer.request.transformAnimal)) {
+        const elementalResponses = {
+          'fire': `Ух ты! Я ${animalName}! ${animalEmoji} Чувствую, как пламя пылает внутри меня!`,
+          'water': `Ух ты! Я ${animalName}! ${animalEmoji} Ощущаю силу течения и прохладу глубин!`,
+          'earth': `Ух ты! Я ${animalName}! ${animalEmoji} Какая мощь! Я тверд как камень!`,
+          'air': `Ух ты! Я ${animalName}! ${animalEmoji} Чувствую легкость! Я могу парить в воздухе!`,
+          'ice': `Ух ты! Я ${animalName}! ${animalEmoji} Прохладно! Но так красиво и величественно!`
+        };
+        
+        return elementalResponses[currentCustomer.request.transformAnimal as keyof typeof elementalResponses];
+      }
+      
       return `Ух ты! Я ${animalName}! ${animalEmoji} Какое чудо! Спасибо, Виолетта!`;
     }
     
